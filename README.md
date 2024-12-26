@@ -17,7 +17,7 @@ Glik è un visualizzatore desktop per Windows che permette di monitorare i dati 
 - 🔒 API Secret support / Supporto per API Secret
 
 ## 📥 Download
-- [⬇️ Download Glik v1.0.0 / Scarica Glik v1.0.0](https://github.com/tuousername/glik/releases/download/v1.0.0/Glik_Setup.exe)
+- [⬇️ Download Glik v1.0.0 / Scarica Glik v1.0.0](https://github.com/emmanueleP/glik/releases/download/v1.0.0/Glik_Setup.exe)
 
 ## 🖥️ System Requirements / Requisiti di Sistema
 - Windows 10/11 (64-bit)

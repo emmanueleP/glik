@@ -57,3 +57,7 @@ htmlcov/
 # Altro
 .DS_Store
 .env 
+
+# Inno Setup
+installer/
+*.iss 

@@ -1,0 +1,12 @@
+# GUI
+PyQt5>=5.15.9
+
+# Network
+requests>=2.31.0
+
+# Build
+pyinstaller>=6.11.0
+
+# Development
+autopep8>=2.0.0
+pylint>=3.0.0 

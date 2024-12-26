@@ -3,10 +3,10 @@
 ![Glik Logo](src/assets/logo_glik.png)
 
 ## 📝 Description
-Glik is a Windows desktop viewer that allows you to monitor blood glucose data from Nightscout. The app remains always accessible in the system tray, showing the current glucose value with real-time updates.
+Glik is a Windows desktop viewer that allows you to monitor blood glucose data from Nightscout. As a Type 1 diabetic, I've created this app to help me and others keep track of their glucose levels even on Windows.
 
 ## 📝 Descrizione
-Glik è un visualizzatore desktop per Windows che permette di monitorare i dati della glicemia da Nightscout. L'app rimane sempre accessibile nella system tray, mostrando il valore glicemico corrente con aggiornamenti in tempo reale.
+Glik è un visualizzatore desktop per Windows che permette di monitorare i dati della glicemia da Nightscout. Essendo diabetico tipo 1, ho creato questa app per aiutare me e altri a tenere traccia dei loro livelli di glicemia anche su Windows.
 
 ## ⚡ Main Features / Caratteristiche Principali
 - 🔄 Automatic data updates (configurable) / Aggiornamento automatico dei dati (configurabile)

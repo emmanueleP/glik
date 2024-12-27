@@ -23,12 +23,14 @@ import json
 import os
 from PyQt5.QtGui import QIcon
 from PyQt5.QtGui import QPixmap
+from .crypto import ConfigCrypto
+from .resources import get_logo_path, get_icon_path
 
 class WelcomeDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Benvenuto in Glik")
-        self.setWindowIcon(QIcon("src/assets/logo_glik.png"))
+        self.setWindowIcon(QIcon(get_icon_path()))
         self.setModal(True)
         self.setStyleSheet("""
             QDialog {
@@ -63,7 +65,7 @@ class WelcomeDialog(QDialog):
         
         # Logo
         logo_label = QLabel()
-        logo = QPixmap("src/assets/logo_glik.png")
+        logo = QPixmap(get_logo_path())
         logo_label.setPixmap(logo.scaled(128, 128, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         logo_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(logo_label)
@@ -114,11 +116,46 @@ class WelcomeDialog(QDialog):
     @staticmethod
     def show_if_first_time():
         """Mostra il dialog solo se non esiste già un file di configurazione"""
-        if not os.path.exists("src/config.json"):
+        import sys
+        import os.path
+        
+        crypto = ConfigCrypto()
+        
+        # Ottieni il percorso dell'eseguibile
+        if getattr(sys, 'frozen', False):
+            application_path = os.path.dirname(sys.executable)
+        else:
+            application_path = os.path.dirname(os.path.abspath(__file__))
+        
+        config_path = os.path.join(application_path, "config.json")
+        
+        # Se esiste un file di configurazione, prova a migrarlo
+        if os.path.exists(config_path):
+            crypto.migrate_config(config_path)
+            return False
+            
+        if not os.path.exists(config_path):
+            default_config = {
+                "nightscout_url": "",
+                "api_secret": "",
+                "api_secret_sha1": "",
+                "dark_mode": True,
+                "minimize_to_tray": True,
+                "refresh_interval": 30,
+                "autostart": False
+            }
+            
+            # Cifra e salva la configurazione di default
+            encrypted_config = crypto.encrypt_config(default_config)
+            with open(config_path, "w") as f:
+                f.write(encrypted_config)
+            
             dialog = WelcomeDialog()
             if dialog.exec_() == QDialog.Accepted:
                 config = dialog.get_config()
-                with open("src/config.json", "w") as f:
-                    json.dump(config, f, indent=4)
+                # Cifra e salva la nuova configurazione
+                encrypted_config = crypto.encrypt_config(config)
+                with open(config_path, "w") as f:
+                    f.write(encrypted_config)
                 return True
         return False 

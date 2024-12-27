@@ -42,6 +42,7 @@ $RECYCLE.BIN/
 
 # Configurazione locale
 src/config.json
+src/.glik_key
 
 # Log
 *.log

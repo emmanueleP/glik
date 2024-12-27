@@ -28,6 +28,10 @@ from .config_dialog import ConfigDialog
 from .about_dialog import AboutDialog
 from .welcome_dialog import WelcomeDialog
 from .help_dialog import HelpDialog
+import sys
+import os.path
+from .crypto import ConfigCrypto
+from .resources import get_logo_path
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -35,8 +39,13 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Glik")
         self.resize(800, 600)
         
-        # Imposta l'icona della finestra
-        self.setWindowIcon(QIcon("src/assets/logo_glik.png"))
+        # Imposta l'icona per tutte le finestre
+        app_icon = QIcon(get_logo_path())
+        self.setWindowIcon(app_icon)
+        
+        # Imposta l'icona nella barra delle applicazioni
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(app_icon)
         
         # Inizializza la configurazione prima di tutto
         self.init_config()
@@ -144,30 +153,22 @@ class MainWindow(QMainWindow):
         self.show()
 
     def init_config(self):
-        """Inizializza la configurazione dell'app"""
-        # Mostra il dialog di benvenuto se è la prima volta
-        if WelcomeDialog.show_if_first_time():
-            try:
-                with open("src/config.json", "r") as f:
-                    self.config = json.loads(f.read())
-            except:
-                self.config = {
-                    "nightscout_url": "",
-                    "api_secret": "",
-                    "api_secret_sha1": "",
-                    "dark_mode": True
-                }
-        else:
-            try:
-                with open("src/config.json", "r") as f:
-                    self.config = json.loads(f.read())
-            except:
-                self.config = {
-                    "nightscout_url": "",
-                    "api_secret": "",
-                    "api_secret_sha1": "",
-                    "dark_mode": True
-                }
+        """Inizializza la configurazione"""
+        config_path = get_config_path()
+        crypto = ConfigCrypto()
+        
+        if not os.path.exists(config_path):
+            if not WelcomeDialog.show_if_first_time():
+                sys.exit()
+        
+        with open(config_path, "r") as f:
+            encrypted_data = f.read()
+            self.config = crypto.decrypt_config(encrypted_data)
+            
+        if self.config is None:
+            if __debug__:
+                print("Errore nella decifratura della configurazione")
+            sys.exit(1)
 
     def create_menu(self):
         menubar = self.menuBar()
@@ -529,3 +530,17 @@ class MainWindow(QMainWindow):
         if self.isMinimized():  
             self.hide()  # Nasconde la finestra invece di minimizzarla
         super().changeEvent(event) 
+
+def get_config_path():
+    """Restituisce il percorso del file di configurazione"""
+    import sys
+    import os.path
+    
+    if getattr(sys, 'frozen', False):
+        # Se è un exe (PyInstaller)
+        application_path = os.path.dirname(sys.executable)
+    else:
+        # Se è in sviluppo
+        application_path = os.path.dirname(os.path.abspath(__file__))
+    
+    return os.path.join(application_path, "config.json") 

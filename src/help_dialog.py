@@ -6,12 +6,13 @@ Copyright (C) 2025 Emmanuele Pani
 from PyQt5.QtWidgets import QDialog, QLabel, QVBoxLayout, QScrollArea, QWidget
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
+from .resources import get_icon_path
 
 class HelpDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Aiuto")
-        self.setWindowIcon(QIcon("src/assets/logo_glik.png"))
+        self.setWindowIcon(QIcon(get_icon_path()))
         self.setModal(True)
         self.resize(800, 600)
         

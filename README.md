@@ -12,13 +12,12 @@ Glik è un visualizzatore desktop per Windows che permette di monitorare i dati 
 - 🔄 Automatic data updates (configurable) / Aggiornamento automatico dei dati (configurabile)
 - 🎨 Dark mode interface / Interfaccia dark mode
 - 🔔 System tray display / Visualizzazione nella system tray
-- 📊 Trend indicators / Indicatori di tendenza
 - 🚀 Windows autostart / Avvio automatico con Windows
 - 🔒 API Secret support / Supporto per API Secret
+- 🔑 Encryption of the API/ Cifratura dell'API 
 
 ## 📥 Download
-CURRENTLY THERE IS A BIG BUG ON OPENING. WORKING ON A FIX.
-- [⬇️ Download Glik v1.0.0 / Scarica Glik v1.0.0](https://github.com/emmanueleP/glik/releases/download/v1.0.0/Glik_Setup.exe)
+- [⬇️ Download Glik v1.0.2 / Scarica Glik v1.0.2](https://github.com/emmanueleP/glik/releases/download/v1.0.2/Glik_Setup.exe)
 
 ## 🖥️ System Requirements / Requisiti di Sistema
 - Windows 10/11 (64-bit)
@@ -44,4 +43,9 @@ CURRENTLY THERE IS A BIG BUG ON OPENING. WORKING ON A FIX.
 - 🔴 Red/Rosso: High glucose (>180 mg/dL) / Glicemia alta
 - 🟡 Orange/Arancione: Low glucose (<70 mg/dL) / Glicemia bassa
 
-## 👨‍💻 Development / Sviluppo 
+## 👨‍💻 Development 
+- [Glik on GitHub](https://github.com/emmanueleP/glik)
+- [Glik on GitHub Releases](https://github.com/emmanueleP/glik/releases)
+Please report any issues, suggestions and bugs to the [GitHub Issues](https://github.com/emmanueleP/glik/issues) page.
+
+

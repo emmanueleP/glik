@@ -20,6 +20,7 @@ from PyQt5.QtWidgets import (QDialog, QLineEdit, QPushButton, QFormLayout,
                             QHBoxLayout, QTabWidget, QWidget, QSpinBox, QLabel,
                             QCheckBox)
 from PyQt5.QtGui import QIcon
+from .resources import get_icon_path
 import winreg
 import os
 import sys
@@ -28,7 +29,7 @@ class ConfigDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Configurazione Glik")
-        self.setWindowIcon(QIcon("src/assets/logo_glik.png"))
+        self.setWindowIcon(QIcon(get_icon_path()))
         self.setModal(True)
         self.setStyleSheet("""
             QDialog {

@@ -17,20 +17,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from PyQt5.QtWidgets import QMessageBox, QLabel, QVBoxLayout, QDialog
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt
+from .resources import get_logo_path, get_icon_path
 
 class AboutDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Informazioni")
+        self.setWindowIcon(QIcon(get_icon_path()))
         self.setModal(True)
         
         layout = QVBoxLayout()
         
         # Logo
         logo_label = QLabel()
-        logo = QPixmap("src/assets/logo_glik.png")
+        logo = QPixmap(get_logo_path())
         logo_label.setPixmap(logo.scaled(128, 128, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         logo_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(logo_label)

@@ -40,7 +40,7 @@ class AboutDialog(QDialog):
         # Testo
         info_text = QLabel(
             "<h3>Glik</h3>"
-            "<p>Versione 1.0</p>"
+            "<p>Versione 1.0.3</p>"
             "<p>Un visualizzatore desktop per Windows per visualizzare i dati della glicemia usando Nightscout.</p>"
             "<p>Basato sulla <a href='https://nightscout.github.io/'>documentazione Nightscout</a></p>"
             "<p>© 2025 - Emmanuele Pani.</p>"

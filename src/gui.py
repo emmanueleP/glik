@@ -281,8 +281,23 @@ class MainWindow(QMainWindow):
             self.config.update(new_config)
             
             try:
-                with open("src/config.json", "w") as f:
-                    json.dump(self.config, f, indent=4)
+                # Usa il percorso corretto per il config.json
+                if getattr(sys, 'frozen', False):
+                    # Se siamo in un exe
+                    config_path = os.path.join(os.path.dirname(sys.executable), "config.json")
+                else:
+                    # Se siamo in development
+                    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config.json")
+                
+                # Assicurati che la directory esista
+                os.makedirs(os.path.dirname(config_path), exist_ok=True)
+                
+                # Cifra e salva la configurazione
+                crypto = ConfigCrypto()
+                encrypted_config = crypto.encrypt_config(self.config)
+                
+                with open(config_path, "w") as f:
+                    f.write(encrypted_config)
                 
                 # Aggiorna gli headers
                 self.headers = {

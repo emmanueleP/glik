@@ -158,19 +158,54 @@ class ConfigDialog(QDialog):
         self.autostart.setChecked(config.get("autostart", False))
 
     def manage_autostart(self, enable):
-        app_path = os.path.abspath(sys.argv[0])
-        key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
-        
+        """Gestisce l'avvio automatico di Windows in modo sicuro"""
         try:
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, 
-                              winreg.KEY_ALL_ACCESS) as key:
-                if enable:
-                    winreg.SetValueEx(key, "Glik", 0, 
-                                    winreg.REG_SZ, f'"{app_path}" --minimized')
-                else:
-                    try:
-                        winreg.DeleteValue(key, "Glik")
-                    except:
-                        pass
+            # Usa il percorso completo dell'eseguibile
+            if getattr(sys, 'frozen', False):
+                # Se siamo in un exe
+                app_path = os.path.abspath(sys.executable)
+                config_dir = os.path.dirname(app_path)  # Directory dell'exe
+            else:
+                # Se siamo in development
+                app_path = os.path.abspath(sys.argv[0])
+                config_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                
+            # Assicurati che la directory esista
+            os.makedirs(config_dir, exist_ok=True)
+            
+            # Imposta il percorso di lavoro corrente
+            os.chdir(config_dir)
+                
+            # Usa il Task Scheduler invece del registro
+            import subprocess
+            task_name = "GlikNightscoutViewer"
+            
+            if enable:
+                # Crea un task pianificato con descrizione chiara e percorso di lavoro
+                cmd = [
+                    'schtasks', '/create', '/tn', task_name,
+                    '/tr', f'cmd /c "cd /d "{config_dir}" && "{app_path}" --minimized"',
+                    '/sc', 'onlogon',
+                    '/rl', 'LIMITED',
+                    '/f',
+                    '/it',
+                    '/ru', os.environ['USERNAME'],
+                    '/np'
+                ]
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                if result.returncode != 0 and __debug__:
+                    print(f"Errore nella creazione del task: {result.stderr}")
+            else:
+                # Rimuovi il task
+                try:
+                    result = subprocess.run(['schtasks', '/delete', '/tn', task_name, '/f'], 
+                                       capture_output=True, text=True)
+                    if result.returncode != 0 and __debug__:
+                        print(f"Errore nella rimozione del task: {result.stderr}")
+                except Exception as e:
+                    if __debug__:
+                        print(f"Errore nella rimozione del task: {e}")
+                    
         except Exception as e:
-            print(f"Errore nella gestione dell'autostart: {e}") 
+            if __debug__:
+                print(f"Errore nella gestione dell'autostart: {e}") 

@@ -21,7 +21,7 @@ import hashlib
 from PyQt5.QtWidgets import (QMainWindow, QSystemTrayIcon, QAction, QMenu, QLabel, 
                             QVBoxLayout, QWidget, QStyle, QMessageBox, QDialog,
                             QFrame, QPushButton, QHBoxLayout,)
-from PyQt5.QtGui import QIcon, QPalette, QColor, QKeySequence, QPixmap, QPainter, QFont
+from PyQt5.QtGui import QIcon, QPalette, QColor, QKeySequence, QPixmap, QPainter, QFont, QPen, QFontMetrics, QBrush, QPainterPath
 from PyQt5.QtCore import Qt, QTimer, QPoint
 import requests
 from .config_dialog import ConfigDialog
@@ -31,7 +31,8 @@ from .help_dialog import HelpDialog
 import sys
 import os.path
 from .crypto import ConfigCrypto
-from .resources import get_logo_path
+from .resources import get_logo_path, get_resource_path
+import darkdetect
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -375,18 +376,33 @@ class MainWindow(QMainWindow):
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
         
-        # Imposta il font con dimensione basata sul numero di cifre
-        font = QFont()
+        # Converti il valore in stringa
         text = str(glucose_value)
+        if len(text) > 3:
+            text = text[:3]
+
+        # Imposta il font in base alla lunghezza del valore
         if len(text) <= 2:
-            font.setPointSize(32)  # Aumentato significativamente per numeri a 1-2 cifre
+            font_size = 24
         elif len(text) == 3:
-            font.setPointSize(26)  # Aumentato significativamente per numeri a 3 cifre
+            font_size = 22
         else:
-            font.setPointSize(20)  # Aumentato per numeri più lunghi
-            
-        font.setBold(True)
+            font_size = 20
+
+        #Imposta il font
+        font = QFont("Arial", font_size, QFont.Bold)
         painter.setFont(font)
+        
+        # Ottieni il colore del testo in base al valore glicemico
+        try:
+            if glucose_value > 180:
+                color = QColor (255, 68, 68) #Rosso
+            elif glucose_value < 70:
+                color = QColor (255, 170, 68) #Arancione
+            else:
+                color = QColor (68, 255, 68) #Verde
+        except:
+            color = QColor (255, 255, 255) #Bianco in caso di errore
         
         # Calcola il rettangolo del testo
         text_rect = painter.fontMetrics().boundingRect(text)
@@ -396,12 +412,22 @@ class MainWindow(QMainWindow):
         scale_h = 31.0 / text_rect.height()  # Usa quasi tutto lo spazio disponibile
         scale = min(scale_w, scale_h)  # Usa il fattore più piccolo per mantenere le proporzioni
         
-        # Applica la trasformazione
-        painter.translate(16, 16)  # Sposta al centro
+        # Applica la trasformazione per centrare perfettamente
+        painter.translate(16, 16)  # Sposta al centro dell'icona
         painter.scale(scale, scale)  # Scala il testo
-        painter.translate(-text_rect.width()/2, text_rect.height()/2)  # Centra il testo
+        painter.translate(-text_rect.width()/2, text_rect.height()/3)  # Aggiustato per centrare verticalmente
         
-        # Disegna il valore
+        # Disegna il contorno usando darkdetect
+        if darkdetect.isDark():
+            # Tema scuro - contorno light blue
+            painter.setPen(QPen(QColor(135, 206, 250), 4))
+        else:
+            # Tema chiaro - contorno nero
+            painter.setPen(QPen(QColor(0, 0, 0), 4))
+            
+        painter.drawText(0, 0, text)
+        
+        # Disegna il valore con il colore specificato
         painter.setPen(QColor(color))
         painter.drawText(0, 0, text)
         

@@ -49,7 +49,7 @@ class MainWindow(QMainWindow):
         self.tray_icon.setIcon(app_icon)
         
         # Inizializza la configurazione prima di tutto
-        self.init_config()
+        self.load_config()
         
         # Imposta tema scuro
         self.set_dark_theme()
@@ -153,23 +153,62 @@ class MainWindow(QMainWindow):
         # Mostra la finestra
         self.show()
 
-    def init_config(self):
-        """Inizializza la configurazione"""
-        config_path = get_config_path()
-        crypto = ConfigCrypto()
-        
-        if not os.path.exists(config_path):
-            if not WelcomeDialog.show_if_first_time():
-                sys.exit()
-        
-        with open(config_path, "r") as f:
-            encrypted_data = f.read()
-            self.config = crypto.decrypt_config(encrypted_data)
+    def load_config(self):
+        """Carica la configurazione"""
+        try:
+            crypto = ConfigCrypto()
             
-        if self.config is None:
+            # Usa AppData per salvare la configurazione
+            config_dir = os.path.join(os.getenv('APPDATA'), 'Glik')
+            config_path = os.path.join(config_dir, 'config.json')
+            
+            # Assicurati che la directory esista
+            os.makedirs(config_dir, exist_ok=True)
+                
+            # Se il file non esiste, crea una configurazione di default
+            if not os.path.exists(config_path):
+                default_config = {
+                    "nightscout_url": "",
+                    "api_secret": "",
+                    "api_secret_sha1": "",
+                    "dark_mode": True,
+                    "minimize_to_tray": True,
+                    "refresh_interval": 30,
+                    "autostart": False
+                }
+                
+                # Cifra e salva la configurazione di default
+                encrypted_config = crypto.encrypt_config(default_config)
+                with open(config_path, "w") as f:
+                    f.write(encrypted_config)
+                
+                # Mostra il dialog di benvenuto
+                from .welcome_dialog import WelcomeDialog
+                dialog = WelcomeDialog(self)
+                if dialog.exec_() == QDialog.Accepted:
+                    self.config = dialog.get_config()
+                    # Salva la nuova configurazione
+                    encrypted_config = crypto.encrypt_config(self.config)
+                    with open(config_path, "w") as f:
+                        f.write(encrypted_config)
+                else:
+                    self.config = default_config
+            else:
+                # Carica la configurazione esistente
+                with open(config_path, "r") as f:
+                    encrypted_config = f.read()
+                self.config = crypto.decrypt_config(encrypted_config)
+            
+            # Se non c'è URL, mostra il dialog di configurazione
+            if not self.config.get("nightscout_url"):
+                self.show_config_dialog()
+                
+        except Exception as e:
             if __debug__:
-                print("Errore nella decifratura della configurazione")
-            sys.exit(1)
+                print(f"Errore nel caricamento della configurazione: {e}")
+            self.config = {}
+            # Mostra il dialog di configurazione in caso di errore
+            self.show_config_dialog()
 
     def create_menu(self):
         menubar = self.menuBar()
@@ -389,20 +428,9 @@ class MainWindow(QMainWindow):
         else:
             font_size = 20
 
-        #Imposta il font
+        # Imposta il font
         font = QFont("Arial", font_size, QFont.Bold)
         painter.setFont(font)
-        
-        # Ottieni il colore del testo in base al valore glicemico
-        try:
-            if glucose_value > 180:
-                color = QColor (255, 68, 68) #Rosso
-            elif glucose_value < 70:
-                color = QColor (255, 170, 68) #Arancione
-            else:
-                color = QColor (68, 255, 68) #Verde
-        except:
-            color = QColor (255, 255, 255) #Bianco in caso di errore
         
         # Calcola il rettangolo del testo
         text_rect = painter.fontMetrics().boundingRect(text)
@@ -419,16 +447,22 @@ class MainWindow(QMainWindow):
         
         # Disegna il contorno usando darkdetect
         if darkdetect.isDark():
-            # Tema scuro - contorno light blue
-            painter.setPen(QPen(QColor(135, 206, 250), 4))
+            # Tema scuro - contorno bianco
+            painter.setPen(QPen(QColor(255, 255, 255), 4))
         else:
             # Tema chiaro - contorno nero
             painter.setPen(QPen(QColor(0, 0, 0), 4))
             
         painter.drawText(0, 0, text)
         
-        # Disegna il valore con il colore specificato
-        painter.setPen(QColor(color))
+        # Disegna il valore con il colore basato sul tema
+        if darkdetect.isDark():
+            # Tema scuro - numero bianco
+            painter.setPen(QColor(255, 255, 255))
+        else:
+            # Tema chiaro - numero nero
+            painter.setPen(QColor(0, 0, 0))
+            
         painter.drawText(0, 0, text)
         
         painter.end()
@@ -436,7 +470,7 @@ class MainWindow(QMainWindow):
         # Imposta l'icona
         self.tray_icon.setIcon(QIcon(pixmap))
         
-        # Aggiorna il tooltip
+        # Aggiorna il tooltip con la freccia di tendenza
         self.tray_icon.setToolTip(f"Glicemia: {glucose_value} mg/dL {trend} | Aggiornato: {local_time}")
 
     def fetch_glucose_data(self):

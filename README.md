@@ -1,3 +1,4 @@
+I know that the app has several problems, such as not saving the api keys in the correct file, not showing after start-up and problems with installation. I am working on a new different version based non only on nightscout but also on pydexcom and available for Windows and macOS. More details soon.
 # 🩺 Glik - Nightscout Desktop Viewer
 
 ![Glik Logo](src/assets/logo_glik.png)

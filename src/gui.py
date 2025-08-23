@@ -28,6 +28,7 @@ from .config_dialog import ConfigDialog
 from .about_dialog import AboutDialog
 from .welcome_dialog import WelcomeDialog
 from .help_dialog import HelpDialog
+from .dexcom_client import DexcomClient
 import sys
 import os.path
 from .crypto import ConfigCrypto
@@ -138,6 +139,15 @@ class MainWindow(QMainWindow):
             'Content-Type': 'application/json'
         }
         
+        # Inizializza il client Dexcom se necessario
+        self.dexcom_client = None
+        if self.config.get("connection_type") == "Dexcom Share":
+            self.dexcom_client = DexcomClient(
+                username=self.config.get("dexcom_username", ""),
+                password=self.config.get("dexcom_password", ""),
+                region=self.config.get("dexcom_region", "ous")
+            )
+        
         # Setup system tray (spostato qui)
         self.setup_system_tray()
         
@@ -215,9 +225,13 @@ class MainWindow(QMainWindow):
             # Se ancora non è stato caricato, crea una configurazione di default
             if not config_loaded:
                 default_config = {
+                    "connection_type": "Nightscout",
                     "nightscout_url": "",
                     "api_secret": "",
                     "api_secret_sha1": "",
+                    "dexcom_username": "",
+                    "dexcom_password": "",
+                    "dexcom_region": "ous",
                     "dark_mode": True,
                     "minimize_to_tray": True,
                     "refresh_interval": 30,
@@ -241,8 +255,11 @@ class MainWindow(QMainWindow):
                     with open(config_path, "w") as f:
                         f.write(encrypted_config)
             
-            # Se non c'è URL, mostra il dialog di configurazione
-            if not self.config.get("nightscout_url"):
+            # Se non c'è configurazione valida, mostra il dialog di configurazione
+            connection_type = self.config.get("connection_type", "Nightscout")
+            if connection_type == "Nightscout" and not self.config.get("nightscout_url"):
+                self.show_config_dialog()
+            elif connection_type == "Dexcom Share" and not self.config.get("dexcom_username"):
                 self.show_config_dialog()
                 
         except Exception as e:
@@ -376,11 +393,19 @@ class MainWindow(QMainWindow):
                 with open(config_path, "w") as f:
                     f.write(encrypted_config)
                 
-                # Aggiorna gli headers
-                self.headers = {
-                    'api-secret': self.config['api_secret_sha1'],
-                    'Content-Type': 'application/json'
-                }
+                # Aggiorna gli headers se necessario
+                if new_config.get("connection_type") == "Nightscout":
+                    self.headers = {
+                        'api-secret': self.config['api_secret_sha1'],
+                        'Content-Type': 'application/json'
+                    }
+                else:
+                    # Aggiorna il client Dexcom
+                    self.dexcom_client = DexcomClient(
+                        username=self.config.get("dexcom_username", ""),
+                        password=self.config.get("dexcom_password", ""),
+                        region=self.config.get("dexcom_region", "ous")
+                    )
                 
                 # Aggiorna l'intervallo del timer
                 self.timer.setInterval(new_config["refresh_interval"] * 1000)
@@ -512,24 +537,20 @@ class MainWindow(QMainWindow):
 
     def fetch_glucose_data(self):
         try:
-            api_url = f"{self.config['nightscout_url']}/api/v1/entries.json"
-            
-            params = {
-                'count': 1,  # Torniamo a richiedere solo l'ultima lettura
-                'find[type]': 'sgv'
-            }
-            
             # Imposta il bottone di refresh come disabilitato durante il caricamento
             self.refresh_button.setEnabled(False)
             self.refresh_button.setToolTip("Caricamento...")
             
-            response = requests.get(api_url, headers=self.headers, params=params)
-            response.raise_for_status()
-            data = response.json()
+            connection_type = self.config.get("connection_type", "Nightscout")
             
-            if isinstance(data, list) and len(data) > 0:
+            if connection_type == "Nightscout":
+                data = self._fetch_nightscout_data()
+            else:  # Dexcom Share
+                data = self._fetch_dexcom_data()
+            
+            if data:
                 # Aggiorna il valore corrente
-                entry = data[0]
+                entry = data[0] if isinstance(data, list) else data
                 glucose_value = entry["sgv"]
                 direction = entry.get("direction", "")
                 timestamp = entry.get("dateString", "")
@@ -592,6 +613,43 @@ class MainWindow(QMainWindow):
             # Riabilita il bottone di refresh
             self.refresh_button.setEnabled(True)
             self.refresh_button.setToolTip("Aggiorna dati (R)")
+    
+    def _fetch_nightscout_data(self):
+        """Recupera i dati da Nightscout"""
+        try:
+            api_url = f"{self.config['nightscout_url']}/api/v1/entries.json"
+            
+            params = {
+                'count': 1,  # Torniamo a richiedere solo l'ultima lettura
+                'find[type]': 'sgv'
+            }
+            
+            response = requests.get(api_url, headers=self.headers, params=params)
+            response.raise_for_status()
+            return response.json()
+            
+        except Exception as e:
+            print(f"Errore Nightscout: {str(e)}")
+            return None
+    
+    def _fetch_dexcom_data(self):
+        """Recupera i dati da Dexcom Share"""
+        try:
+            if not self.dexcom_client:
+                # Ricrea il client se necessario
+                self.dexcom_client = DexcomClient(
+                    username=self.config.get("dexcom_username", ""),
+                    password=self.config.get("dexcom_password", ""),
+                    region=self.config.get("dexcom_region", "ous")
+                )
+            
+            # Ottieni la cronologia per calcolare il delta
+            data = self.dexcom_client.get_glucose_history(count=2)
+            return data
+            
+        except Exception as e:
+            print(f"Errore Dexcom: {str(e)}")
+            return None
 
     def keyPressEvent(self, event):
         # Gestione scorciatoia R per refresh
@@ -630,11 +688,19 @@ class MainWindow(QMainWindow):
                 with open(config_path, "w") as f:
                     f.write(encrypted_config)
                 
-                # Aggiorna gli headers
-                self.headers = {
-                    'api-secret': self.config['api_secret_sha1'],
-                    'Content-Type': 'application/json'
-                }
+                # Aggiorna gli headers se necessario
+                if self.config.get("connection_type") == "Nightscout":
+                    self.headers = {
+                        'api-secret': self.config['api_secret_sha1'],
+                        'Content-Type': 'application/json'
+                    }
+                else:
+                    # Aggiorna il client Dexcom
+                    self.dexcom_client = DexcomClient(
+                        username=self.config.get("dexcom_username", ""),
+                        password=self.config.get("dexcom_password", ""),
+                        region=self.config.get("dexcom_region", "ous")
+                    )
                 
                 # Ricarica i dati
                 self.fetch_glucose_data()

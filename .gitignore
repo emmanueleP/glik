@@ -42,7 +42,6 @@ $RECYCLE.BIN/
 
 # Configurazione locale
 src/config.json
-src/.glik_key
 
 # Log
 *.log
@@ -61,4 +60,7 @@ htmlcov/
 
 # Inno Setup
 installer/
-*.iss 
+*.iss
+
+# Glik
+*.glik_key

@@ -4,10 +4,10 @@ I know that the app has several problems, such as not saving the api keys in the
 ![Glik Logo](src/assets/logo_glik.png)
 
 ## 📝 Description
-Glik is a Windows desktop viewer that allows you to monitor blood glucose data from Nightscout. As a Type 1 diabetic, I've created this app to help me and others keep track of their glucose levels even on Windows.
+Glik is a Windows desktop viewer that allows you to monitor blood glucose data from Nightscout or directly from Dexcom Share. As a Type 1 diabetic, I've created this app to help me and others keep track of their glucose levels even on Windows.
 
 ## 📝 Descrizione
-Glik è un visualizzatore desktop per Windows che permette di monitorare i dati della glicemia da Nightscout. Essendo diabetico tipo 1, ho creato questa app per aiutare me e altri a tenere traccia dei loro livelli di glicemia anche su Windows.
+Glik è un visualizzatore desktop per Windows che permette di monitorare i dati della glicemia da Nightscout o direttamente da Dexcom Share. Essendo diabetico tipo 1, ho creato questa app per aiutare me e altri a tenere traccia dei loro livelli di glicemia anche su Windows.
 
 ## ⚡ Main Features / Caratteristiche Principali
 - 🔄 Automatic data updates (configurable) / Aggiornamento automatico dei dati (configurabile)
@@ -15,7 +15,9 @@ Glik è un visualizzatore desktop per Windows che permette di monitorare i dati 
 - 🔔 System tray display / Visualizzazione nella system tray
 - 🚀 Windows autostart / Avvio automatico con Windows
 - 🔒 API Secret support / Supporto per API Secret
-- 🔑 Encryption of the API/ Cifratura dell'API 
+- 🔑 Encryption of the API/ Cifratura dell'API
+- 📱 **NEW: Dexcom Share support** / **NUOVO: Supporto Dexcom Share**
+- 🔄 **NEW: Dual connection modes** / **NUOVO: Modalità di connessione doppia** 
 
 ## 📥 Download
 - [⬇️ Download Glik v1.0.4 / Scarica Glik v1.0.4](https://github.com/emmanueleP/glik/releases/download/v1.0.4/Glik_Setup.exe)
@@ -25,12 +27,15 @@ Glik è un visualizzatore desktop per Windows che permette di monitorare i dati 
 - 100MB disk space / spazio su disco
 - 2GB RAM
 - Internet connection / Connessione Internet
-- [Nightscout site](https://nightscout.github.io/) configured and working / configurato e funzionante
+- **Option 1**: [Nightscout site](https://nightscout.github.io/) configured and working / configurato e funzionante
+- **Option 2**: Dexcom account with Share service enabled / Account Dexcom con servizio Share abilitato
 
 ## 🛠️ Installation / Installazione
 1. Download the executable / Scarica l'eseguibile
 2. Run `Glik.exe` / Esegui il file `Glik.exe`
-3. On first launch, enter your Nightscout URL and API Secret / Al primo avvio, inserisci l'URL del tuo sito Nightscout e l'API Secret
+3. On first launch, choose your connection type and enter credentials / Al primo avvio, scegli il tipo di connessione e inserisci le credenziali:
+   - **Nightscout**: URL del sito e API Secret
+   - **Dexcom Share**: Username/email e password Dexcom
 4. The app will start in the system tray / L'app si avvierà nella system tray
 
 ## 🎯 Usage / Utilizzo

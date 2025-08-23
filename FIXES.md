@@ -81,3 +81,10 @@ Se la configurazione non viene salvata:
 - ✅ **Avvio automatico**: Risolto - ora funziona con Task Scheduler
 - ✅ **Migrazione**: Implementata - configurazioni legacy migrate automaticamente
 - ✅ **Percorsi**: Uniformati - tutti i metodi usano lo stesso percorso
+
+## Nuove Funzionalità
+
+- ✅ **Supporto Dexcom Share**: Aggiunta integrazione diretta con Dexcom Share API
+- ✅ **Doppia modalità**: Supporto sia per Nightscout che per Dexcom Share
+- ✅ **Interfaccia unificata**: Configurazione centralizzata per entrambi i servizi
+- ✅ **Migrazione automatica**: Mantenimento delle configurazioni esistenti

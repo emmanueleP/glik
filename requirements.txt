@@ -3,6 +3,7 @@ PyQt5>=5.15.9
 
 # Network
 requests>=2.31.0
+pydexcom>=0.2.0
 
 # Build
 pyinstaller>=6.11.0

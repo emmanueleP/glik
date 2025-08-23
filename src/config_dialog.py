@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from PyQt5.QtWidgets import (QDialog, QLineEdit, QPushButton, QFormLayout, 
                             QHBoxLayout, QTabWidget, QWidget, QSpinBox, QLabel,
-                            QCheckBox)
+                            QCheckBox, QComboBox)
 from PyQt5.QtGui import QIcon
 from .resources import get_icon_path
 import winreg
@@ -78,14 +78,50 @@ class ConfigDialog(QDialog):
         connection_tab = QWidget()
         connection_layout = QFormLayout()
         
+        # Selezione tipo di connessione
+        self.connection_type = QComboBox()
+        self.connection_type.addItems(["Nightscout", "Dexcom Share"])
+        self.connection_type.currentTextChanged.connect(self.on_connection_type_changed)
+        
+        connection_layout.addRow("Tipo di connessione:", self.connection_type)
+        
+        # Nightscout fields
         self.url_input = QLineEdit()
         self.token_input = QLineEdit()
         self.sha1_input = QLineEdit()
         
-        connection_layout.addRow("URL Nightscout:", self.url_input)
-        connection_layout.addRow("API Secret Token:", self.token_input)
-        connection_layout.addRow("API Secret SHA1:", self.sha1_input)
+        self.nightscout_group = QWidget()
+        nightscout_layout = QFormLayout()
+        nightscout_layout.addRow("URL Nightscout:", self.url_input)
+        nightscout_layout.addRow("API Secret Token:", self.token_input)
+        nightscout_layout.addRow("API Secret SHA1:", self.sha1_input)
+        self.nightscout_group.setLayout(nightscout_layout)
+        
+        # Dexcom fields
+        self.dexcom_username = QLineEdit()
+        self.dexcom_password = QLineEdit()
+        self.dexcom_password.setEchoMode(QLineEdit.Password)
+        self.dexcom_region = QComboBox()
+        self.dexcom_region.addItems(["OUS (Europa/Internazionale)", "US (Stati Uniti)", "JP (Giappone)"])
+        
+        self.dexcom_group = QWidget()
+        dexcom_layout = QFormLayout()
+        dexcom_layout.addRow("Username/Email/Telefono:", self.dexcom_username)
+        dexcom_layout.addRow("Password:", self.dexcom_password)
+        dexcom_layout.addRow("Regione:", self.dexcom_region)
+        self.dexcom_group.setLayout(dexcom_layout)
+        
+        # Aggiungi i gruppi al layout
+        connection_layout.addRow(self.nightscout_group)
+        connection_layout.addRow(self.dexcom_group)
+        
+        # Nascondi inizialmente Dexcom
+        self.dexcom_group.setVisible(False)
+        
         connection_tab.setLayout(connection_layout)
+        
+        # Connetti il cambio di tipo di connessione
+        self.connection_type.currentTextChanged.connect(self.on_connection_type_changed)
         
         # Tab Impostazioni
         settings_tab = QWidget()
@@ -138,14 +174,27 @@ class ConfigDialog(QDialog):
         self.setLayout(main_layout)
         
     def get_config(self):
+        connection_type = self.connection_type.currentText()
+        
         config = {
-            "nightscout_url": self.url_input.text().strip(),
-            "api_secret": self.token_input.text().strip(),
-            "api_secret_sha1": self.sha1_input.text().strip(),
+            "connection_type": connection_type,
             "refresh_interval": self.refresh_interval.value(),
             "minimize_to_tray": self.minimize_to_tray.isChecked(),
             "autostart": self.autostart.isChecked()
         }
+        
+        if connection_type == "Nightscout":
+            config.update({
+                "nightscout_url": self.url_input.text().strip(),
+                "api_secret": self.token_input.text().strip(),
+                "api_secret_sha1": self.sha1_input.text().strip(),
+            })
+        else:  # Dexcom Share
+            config.update({
+                "dexcom_username": self.dexcom_username.text().strip(),
+                "dexcom_password": self.dexcom_password.text().strip(),
+                "dexcom_region": self.dexcom_region.currentText().split(" ")[0].lower(),
+            })
         
         # Gestisci l'autostart
         self.manage_autostart(config["autostart"])
@@ -153,12 +202,34 @@ class ConfigDialog(QDialog):
         return config
         
     def set_config(self, config):
+        # Imposta il tipo di connessione
+        connection_type = config.get("connection_type", "Nightscout")
+        self.connection_type.setCurrentText(connection_type)
+        
+        # Imposta i campi Nightscout
         self.url_input.setText(config.get("nightscout_url", ""))
         self.token_input.setText(config.get("api_secret", ""))
         self.sha1_input.setText(config.get("api_secret_sha1", ""))
+        
+        # Imposta i campi Dexcom
+        self.dexcom_username.setText(config.get("dexcom_username", ""))
+        self.dexcom_password.setText(config.get("dexcom_password", ""))
+        
+        dexcom_region = config.get("dexcom_region", "ous")
+        if dexcom_region == "us":
+            self.dexcom_region.setCurrentText("US (Stati Uniti)")
+        elif dexcom_region == "jp":
+            self.dexcom_region.setCurrentText("JP (Giappone)")
+        else:
+            self.dexcom_region.setCurrentText("OUS (Europa/Internazionale)")
+        
+        # Imposta le altre opzioni
         self.refresh_interval.setValue(config.get("refresh_interval", 30))
         self.minimize_to_tray.setChecked(config.get("minimize_to_tray", True))
         self.autostart.setChecked(config.get("autostart", False))
+        
+        # Aggiorna la visibilità dei gruppi
+        self.on_connection_type_changed(connection_type)
 
     def manage_autostart(self, enable):
         """Gestisce l'avvio automatico di Windows in modo sicuro"""
@@ -228,4 +299,13 @@ class ConfigDialog(QDialog):
                 
         except Exception as e:
             print(f"Errore nel verificare lo stato dell'autostart: {e}")
-            self.autostart.setChecked(False) 
+            self.autostart.setChecked(False)
+    
+    def on_connection_type_changed(self, connection_type: str):
+        """Gestisce il cambio di tipo di connessione"""
+        if connection_type == "Nightscout":
+            self.nightscout_group.setVisible(True)
+            self.dexcom_group.setVisible(False)
+        else:  # Dexcom Share
+            self.nightscout_group.setVisible(False)
+            self.dexcom_group.setVisible(True) 

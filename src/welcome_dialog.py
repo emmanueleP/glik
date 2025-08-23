@@ -17,7 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 from PyQt5.QtWidgets import (QDialog, QLabel, QLineEdit, QPushButton, 
-                            QVBoxLayout, QFormLayout)
+                            QVBoxLayout, QFormLayout, QComboBox, QWidget)
 from PyQt5.QtCore import Qt
 import json
 import os
@@ -74,25 +74,59 @@ class WelcomeDialog(QDialog):
         welcome_label = QLabel(
             "Benvenuto in Glik!\n\n"
             "© 2025 - Emmanuele Pani. Under GNU AGPL v3.0\n\n"
-            "Per iniziare, inserisci l'URL del tuo sito Nightscout "
-            "e il token API Secret.\n"
+            "Scegli il tipo di connessione e inserisci le credenziali.\n"
             "Potrai modificare queste impostazioni in seguito dal menu Strumenti."
         )
         welcome_label.setWordWrap(True)
         welcome_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(welcome_label)
         
-        # Form per i dati
+        # Selezione tipo di connessione
         form_layout = QFormLayout()
         
+        self.connection_type = QComboBox()
+        self.connection_type.addItems(["Nightscout", "Dexcom Share"])
+        self.connection_type.currentTextChanged.connect(self.on_connection_type_changed)
+        
+        form_layout.addRow("Tipo di connessione:", self.connection_type)
+        
+        # Nightscout fields
         self.url_input = QLineEdit()
         self.url_input.setPlaceholderText("https://mio-sito.nightscout.org")
         
         self.token_input = QLineEdit()
         self.token_input.setPlaceholderText("token-api-secret")
         
-        form_layout.addRow("URL Nightscout:", self.url_input)
-        form_layout.addRow("API Secret:", self.token_input)
+        self.nightscout_group = QWidget()
+        nightscout_layout = QFormLayout()
+        nightscout_layout.addRow("URL Nightscout:", self.url_input)
+        nightscout_layout.addRow("API Secret:", self.token_input)
+        self.nightscout_group.setLayout(nightscout_layout)
+        
+        # Dexcom fields
+        self.dexcom_username = QLineEdit()
+        self.dexcom_username.setPlaceholderText("username@email.com o +1234567890")
+        
+        self.dexcom_password = QLineEdit()
+        self.dexcom_password.setPlaceholderText("password")
+        self.dexcom_password.setEchoMode(QLineEdit.Password)
+        
+        self.dexcom_region = QComboBox()
+        self.dexcom_region.addItems(["OUS (Europa/Internazionale)", "US (Stati Uniti)", "JP (Giappone)"])
+        
+        self.dexcom_group = QWidget()
+        dexcom_layout = QFormLayout()
+        dexcom_layout.addRow("Username/Email/Telefono:", self.dexcom_username)
+        dexcom_layout.addRow("Password:", self.dexcom_password)
+        dexcom_layout.addRow("Regione:", self.dexcom_region)
+        self.dexcom_group.setLayout(dexcom_layout)
+        
+        # Aggiungi i gruppi al layout
+        form_layout.addRow(self.nightscout_group)
+        form_layout.addRow(self.dexcom_group)
+        
+        # Nascondi inizialmente Dexcom
+        self.dexcom_group.setVisible(False)
         
         layout.addLayout(form_layout)
         
@@ -101,17 +135,41 @@ class WelcomeDialog(QDialog):
         save_button.clicked.connect(self.accept)
         layout.addWidget(save_button)
     
+    def on_connection_type_changed(self, connection_type: str):
+        """Gestisce il cambio di tipo di connessione"""
+        if connection_type == "Nightscout":
+            self.nightscout_group.setVisible(True)
+            self.dexcom_group.setVisible(False)
+        else:  # Dexcom Share
+            self.nightscout_group.setVisible(False)
+            self.dexcom_group.setVisible(True)
+    
     def get_config(self):
         import hashlib
-        token = self.token_input.text().strip()
-        return {
-            "nightscout_url": self.url_input.text().strip(),
-            "api_secret": token,
-            "api_secret_sha1": hashlib.sha1(token.encode()).hexdigest(),
+        connection_type = self.connection_type.currentText()
+        
+        config = {
+            "connection_type": connection_type,
             "dark_mode": True,
             "minimize_to_tray": True,
             "refresh_interval": 30
         }
+        
+        if connection_type == "Nightscout":
+            token = self.token_input.text().strip()
+            config.update({
+                "nightscout_url": self.url_input.text().strip(),
+                "api_secret": token,
+                "api_secret_sha1": hashlib.sha1(token.encode()).hexdigest(),
+            })
+        else:  # Dexcom Share
+            config.update({
+                "dexcom_username": self.dexcom_username.text().strip(),
+                "dexcom_password": self.dexcom_password.text().strip(),
+                "dexcom_region": self.dexcom_region.currentText().split(" ")[0].lower(),
+            })
+        
+        return config
 
     @staticmethod
     def show_if_first_time():
@@ -136,9 +194,13 @@ class WelcomeDialog(QDialog):
             
         if not os.path.exists(config_path):
             default_config = {
+                "connection_type": "Nightscout",
                 "nightscout_url": "",
                 "api_secret": "",
                 "api_secret_sha1": "",
+                "dexcom_username": "",
+                "dexcom_password": "",
+                "dexcom_region": "ous",
                 "dark_mode": True,
                 "minimize_to_tray": True,
                 "refresh_interval": 30,

@@ -173,19 +173,16 @@ class WelcomeDialog(QDialog):
 
     @staticmethod
     def show_if_first_time():
-        """Mostra il dialog solo se non esiste già un file di configurazione"""
+        """Mostra il dialog solo se non esiste già un file di configurazione in APPDATA"""
         import sys
         import os.path
         
         crypto = ConfigCrypto()
         
-        # Ottieni il percorso dell'eseguibile
-        if getattr(sys, 'frozen', False):
-            application_path = os.path.dirname(sys.executable)
-        else:
-            application_path = os.path.dirname(os.path.abspath(__file__))
-        
-        config_path = os.path.join(application_path, "config.json")
+        # Usa sempre APPDATA per i file di configurazione
+        config_dir = os.path.join(os.getenv('APPDATA'), 'Glik')
+        os.makedirs(config_dir, exist_ok=True)
+        config_path = os.path.join(config_dir, "config.json")
         
         # Se esiste un file di configurazione, prova a migrarlo
         if os.path.exists(config_path):

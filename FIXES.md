@@ -59,7 +59,7 @@
 ## Note Importanti
 
 - Le configurazioni vengono ora salvate in `%APPDATA%\Glik\config.json`
-- La chiave di crittografia è salvata in `.glik_key` nella directory dell'applicazione
+- La chiave di crittografia è salvata in `.glik_key` nella directory APPDATA
 - L'avvio automatico usa il Task Scheduler di Windows per maggiore affidabilità
 - È implementata migrazione automatica da configurazioni precedenti
 

@@ -16,7 +16,7 @@ class ConfigCrypto:
         self.cipher_suite = Fernet(self.key)
     
     def _get_or_create_key(self):
-        """Ottiene o crea una chiave di cifratura"""
+        """Ottiene o crea una chiave di cifratura nella directory APPDATA"""
         key_file = Path(self._get_app_path()) / ".glik_key"
         
         if key_file.exists():
@@ -32,10 +32,12 @@ class ConfigCrypto:
             return key
     
     def _get_app_path(self):
-        """Ottiene il percorso dell'applicazione"""
-        if getattr(sys, 'frozen', False):
-            return os.path.dirname(sys.executable)
-        return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        """Ottiene il percorso per salvare i file di configurazione e chiavi"""
+        # Usa sempre APPDATA per i file di configurazione e chiavi
+        appdata_path = os.path.join(os.getenv('APPDATA'), 'Glik')
+        # Crea la directory se non esiste
+        os.makedirs(appdata_path, exist_ok=True)
+        return appdata_path
     
     def encrypt_config(self, config_data):
         """Cifra i dati di configurazione"""

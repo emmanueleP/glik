@@ -142,11 +142,22 @@ class MainWindow(QMainWindow):
         # Inizializza il client Dexcom se necessario
         self.dexcom_client = None
         if self.config.get("connection_type") == "Dexcom Share":
-            self.dexcom_client = DexcomClient(
-                username=self.config.get("dexcom_username", ""),
-                password=self.config.get("dexcom_password", ""),
-                region=self.config.get("dexcom_region", "ous")
-            )
+            # Verifica se pydexcom è disponibile
+            temp_client = DexcomClient()
+            if not temp_client.is_available():
+                print("pydexcom non disponibile. Configurazione Dexcom non può essere utilizzata.")
+                # Cambia automaticamente a Nightscout se Dexcom non è disponibile
+                self.config["connection_type"] = "Nightscout"
+                QMessageBox.warning(self, "Avviso", 
+                    "pydexcom non è installato. La configurazione è stata cambiata automaticamente a Nightscout.\n\n"
+                    "Per usare Dexcom Share, installa la libreria:\n"
+                    "pip install pydexcom")
+            else:
+                self.dexcom_client = DexcomClient(
+                    username=self.config.get("dexcom_username", ""),
+                    password=self.config.get("dexcom_password", ""),
+                    region=self.config.get("dexcom_region", "ous")
+                )
         
         # Setup system tray (spostato qui)
         self.setup_system_tray()
@@ -401,6 +412,13 @@ class MainWindow(QMainWindow):
                     }
                 else:
                     # Aggiorna il client Dexcom
+                    if not self.dexcom_client or not self.dexcom_client.is_available():
+                        QMessageBox.warning(self, "Avviso", 
+                            "pydexcom non è installato. Per usare Dexcom Share, installa la libreria:\n\n"
+                            "pip install pydexcom\n\n"
+                            "Oppure usa Nightscout come alternativa.")
+                        return
+                    
                     self.dexcom_client = DexcomClient(
                         username=self.config.get("dexcom_username", ""),
                         password=self.config.get("dexcom_password", ""),
@@ -602,7 +620,13 @@ class MainWindow(QMainWindow):
                 self.update_tray_icon(glucose_value, trend, color, local_time)
                 
             else:
-                raise Exception("Nessun dato disponibile")
+                # Se non ci sono dati, mostra un messaggio più specifico
+                connection_type = self.config.get("connection_type", "Nightscout")
+                if connection_type == "Dexcom Share" and self.dexcom_client:
+                    error_msg = self.dexcom_client.last_error or "Nessun dato disponibile da Dexcom"
+                    raise Exception(error_msg)
+                else:
+                    raise Exception("Nessun dato disponibile")
                 
         except Exception as e:
             print(f"Errore dettagliato: {str(e)}")
@@ -643,8 +667,25 @@ class MainWindow(QMainWindow):
                     region=self.config.get("dexcom_region", "ous")
                 )
             
+            # Verifica se il client è disponibile
+            if not self.dexcom_client.is_available():
+                print("pydexcom non disponibile. Installa con: pip install pydexcom")
+                return None
+            
+            # Verifica se le credenziali sono impostate
+            if not self.dexcom_client.username or not self.dexcom_client.password:
+                print("Credenziali Dexcom non impostate")
+                return None
+            
             # Ottieni la cronologia per calcolare il delta
             data = self.dexcom_client.get_glucose_history(count=2)
+            
+            if not data:
+                # Ottieni l'errore specifico dal client
+                error_msg = self.dexcom_client.last_error or "Errore sconosciuto"
+                print(f"Errore nel recuperare dati Dexcom: {error_msg}")
+                return None
+            
             return data
             
         except Exception as e:
@@ -696,6 +737,13 @@ class MainWindow(QMainWindow):
                     }
                 else:
                     # Aggiorna il client Dexcom
+                    if not self.dexcom_client or not self.dexcom_client.is_available():
+                        QMessageBox.warning(self, "Avviso", 
+                            "pydexcom non è installato. Per usare Dexcom Share, installa la libreria:\n\n"
+                            "pip install pydexcom\n\n"
+                            "Oppure usa Nightscout come alternativa.")
+                        return
+                    
                     self.dexcom_client = DexcomClient(
                         username=self.config.get("dexcom_username", ""),
                         password=self.config.get("dexcom_password", ""),

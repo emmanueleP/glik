@@ -1,5 +1,4 @@
-I know that the app has several problems, such as not saving the api keys in the correct file, not showing after start-up and problems with installation. I am working on a new different version based non only on nightscout but also on pydexcom and available for Windows and macOS. More details soon.
-# 🩺 Glik - Nightscout Desktop Viewer
+# 🩺 Glik - Blood Sugar Viewer
 
 ![Glik Logo](src/assets/logo_glik.png)
 
@@ -17,10 +16,13 @@ Glik è un visualizzatore desktop per Windows che permette di monitorare i dati 
 - 🔒 API Secret support / Supporto per API Secret
 - 🔑 Encryption of the API/ Cifratura dell'API
 - 📱 **NEW: Dexcom Share support** / **NUOVO: Supporto Dexcom Share**
-- 🔄 **NEW: Dual connection modes** / **NUOVO: Modalità di connessione doppia** 
+- 🔄 **NEW: Dual connection modes** / **NUOVO: Modalità di connessione doppia**
+- ✅ **FIXED: Permission issues resolved** / **RISOLTO: Problemi di permessi risolti**
+- ✅ **FIXED: Configuration persistence** / **RISOLTO: Persistenza configurazione** 
 
 ## 📥 Download
-- [⬇️ Download Glik v1.0.4 / Scarica Glik v1.0.4](https://github.com/emmanueleP/glik/releases/download/v1.0.4/Glik_Setup.exe)
+- [⬇️ Download Glik v1.0.6 / Scarica Glik v1.0.6](https://github.com/emmanueleP/glik/releases/download/v1.0.6/Glik_Setup.exe)
+- ✅ **Latest version fixes permission issues and configuration persistence** / **L'ultima versione risolve i problemi di permessi e la persistenza della configurazione**
 
 ## 🖥️ System Requirements / Requisiti di Sistema
 - Windows 10/11 (64-bit)
@@ -49,9 +51,29 @@ Glik è un visualizzatore desktop per Windows che permette di monitorare i dati 
 - 🔴 Red/Rosso: High glucose (>180 mg/dL) / Glicemia alta
 - 🟡 Orange/Arancione: Low glucose (<70 mg/dL) / Glicemia bassa
 
+## 🔧 Recent Fixes / Correzioni Recenti
+### ✅ v1.0.6 - Permission Issues Resolved / Problemi di Permessi Risolti
+- **Fixed**: Permission denied errors when saving configuration in compiled exe
+- **Fixed**: Configuration not persisting between app launches
+- **Fixed**: API keys not being saved correctly
+- **Solution**: All configuration files now saved in `%APPDATA%\Glik` instead of Program Files
+- **Benefit**: App now works correctly when installed in C:\Program Files\Glik
+
+### ✅ v1.0.5 - Auto-start and Configuration
+- **Fixed**: Windows auto-start not working properly
+- **Fixed**: Configuration migration from legacy paths
+- **Added**: Better error handling and user feedback
+
 ## 👨‍💻 Development 
 - [Glik on GitHub](https://github.com/emmanueleP/glik)
 - [Glik on GitHub Releases](https://github.com/emmanueleP/glik/releases)
-Please report any issues, suggestions and bugs to the [GitHub Issues](https://github.com/emmanueleP/glik/issues) page.
+- [Report Issues](https://github.com/emmanueleP/glik/issues) / [Segnala Problemi](https://github.com/emmanueleP/glik/issues)
+
+### 🚀 Current Status / Stato Attuale
+- ✅ **Windows**: Fully functional with all recent fixes / Completamente funzionale con tutte le correzioni recenti
+- 🔄 **macOS**: In development / In sviluppo
+
+
+
 
 

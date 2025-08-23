@@ -164,9 +164,56 @@ class MainWindow(QMainWindow):
             
             # Assicurati che la directory esista
             os.makedirs(config_dir, exist_ok=True)
-                
-            # Se il file non esiste, crea una configurazione di default
-            if not os.path.exists(config_path):
+            
+            # Prova a caricare da percorsi legacy per migrazione
+            legacy_paths = [
+                os.path.join(os.path.dirname(sys.executable), "config.json") if getattr(sys, 'frozen', False) else None,
+                os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config.json")
+            ]
+            
+            config_loaded = False
+            
+            # Prima prova a caricare da APPDATA
+            if os.path.exists(config_path):
+                try:
+                    with open(config_path, "r") as f:
+                        encrypted_config = f.read()
+                    self.config = crypto.decrypt_config(encrypted_config)
+                    if self.config:
+                        config_loaded = True
+                except Exception as e:
+                    print(f"Errore nel caricare da APPDATA: {e}")
+            
+            # Se non è stato caricato da APPDATA, prova i percorsi legacy
+            if not config_loaded:
+                for legacy_path in legacy_paths:
+                    if legacy_path and os.path.exists(legacy_path):
+                        try:
+                            with open(legacy_path, "r") as f:
+                                legacy_config = f.read()
+                            
+                            # Prova a decifrare o caricare come JSON semplice
+                            if legacy_config.strip().startswith('{'):
+                                # Probabilmente JSON non cifrato
+                                self.config = json.loads(legacy_config)
+                            else:
+                                # Prova a decifrare
+                                self.config = crypto.decrypt_config(legacy_config)
+                            
+                            if self.config:
+                                # Migra la configurazione in APPDATA
+                                encrypted_config = crypto.encrypt_config(self.config)
+                                with open(config_path, "w") as f:
+                                    f.write(encrypted_config)
+                                config_loaded = True
+                                print("Configurazione migrata con successo in APPDATA")
+                                break
+                        except Exception as e:
+                            print(f"Errore nel caricare da {legacy_path}: {e}")
+                            continue
+            
+            # Se ancora non è stato caricato, crea una configurazione di default
+            if not config_loaded:
                 default_config = {
                     "nightscout_url": "",
                     "api_secret": "",
@@ -182,6 +229,8 @@ class MainWindow(QMainWindow):
                 with open(config_path, "w") as f:
                     f.write(encrypted_config)
                 
+                self.config = default_config
+                
                 # Mostra il dialog di benvenuto
                 from .welcome_dialog import WelcomeDialog
                 dialog = WelcomeDialog(self)
@@ -191,21 +240,13 @@ class MainWindow(QMainWindow):
                     encrypted_config = crypto.encrypt_config(self.config)
                     with open(config_path, "w") as f:
                         f.write(encrypted_config)
-                else:
-                    self.config = default_config
-            else:
-                # Carica la configurazione esistente
-                with open(config_path, "r") as f:
-                    encrypted_config = f.read()
-                self.config = crypto.decrypt_config(encrypted_config)
             
             # Se non c'è URL, mostra il dialog di configurazione
             if not self.config.get("nightscout_url"):
                 self.show_config_dialog()
                 
         except Exception as e:
-            if __debug__:
-                print(f"Errore nel caricamento della configurazione: {e}")
+            print(f"Errore nel caricamento della configurazione: {e}")
             self.config = {}
             # Mostra il dialog di configurazione in caso di errore
             self.show_config_dialog()
@@ -321,16 +362,12 @@ class MainWindow(QMainWindow):
             self.config.update(new_config)
             
             try:
-                # Usa il percorso corretto per il config.json
-                if getattr(sys, 'frozen', False):
-                    # Se siamo in un exe
-                    config_path = os.path.join(os.path.dirname(sys.executable), "config.json")
-                else:
-                    # Se siamo in development
-                    config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config.json")
+                # Usa il percorso corretto per il config.json (APPDATA)
+                config_dir = os.path.join(os.getenv('APPDATA'), 'Glik')
+                config_path = os.path.join(config_dir, 'config.json')
                 
                 # Assicurati che la directory esista
-                os.makedirs(os.path.dirname(config_path), exist_ok=True)
+                os.makedirs(config_dir, exist_ok=True)
                 
                 # Cifra e salva la configurazione
                 crypto = ConfigCrypto()
@@ -579,8 +616,19 @@ class MainWindow(QMainWindow):
             config = dialog.get_config()
             self.config.update(config)
             try:
-                with open("src/config.json", "w") as f:
-                    json.dump(self.config, f, indent=4)
+                # Usa il percorso corretto per il config.json (APPDATA)
+                config_dir = os.path.join(os.getenv('APPDATA'), 'Glik')
+                config_path = os.path.join(config_dir, 'config.json')
+                
+                # Assicurati che la directory esista
+                os.makedirs(config_dir, exist_ok=True)
+                
+                # Cifra e salva la configurazione
+                crypto = ConfigCrypto()
+                encrypted_config = crypto.encrypt_config(self.config)
+                
+                with open(config_path, "w") as f:
+                    f.write(encrypted_config)
                 
                 # Aggiorna gli headers
                 self.headers = {
@@ -606,16 +654,4 @@ class MainWindow(QMainWindow):
             self.hide()  # Nasconde la finestra invece di minimizzarla
         super().changeEvent(event) 
 
-def get_config_path():
-    """Restituisce il percorso del file di configurazione"""
-    import sys
-    import os.path
-    
-    if getattr(sys, 'frozen', False):
-        # Se è un exe (PyInstaller)
-        application_path = os.path.dirname(sys.executable)
-    else:
-        # Se è in sviluppo
-        application_path = os.path.dirname(os.path.abspath(__file__))
-    
-    return os.path.join(application_path, "config.json") 
+ 

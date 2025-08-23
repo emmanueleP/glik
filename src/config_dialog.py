@@ -107,6 +107,9 @@ class ConfigDialog(QDialog):
         self.autostart = QCheckBox("Avvia all'avvio di Windows")
         self.minimize_to_tray = QCheckBox("Minimizza nel system tray invece di chiudere")
         
+        # Verifica lo stato attuale dell'autostart
+        self.check_autostart_status()
+        
         settings_layout.addRow(self.autostart)
         settings_layout.addRow(self.minimize_to_tray)
         
@@ -164,27 +167,19 @@ class ConfigDialog(QDialog):
             if getattr(sys, 'frozen', False):
                 # Se siamo in un exe
                 app_path = os.path.abspath(sys.executable)
-                config_dir = os.path.dirname(app_path)  # Directory dell'exe
             else:
                 # Se siamo in development
                 app_path = os.path.abspath(sys.argv[0])
-                config_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                
-            # Assicurati che la directory esista
-            os.makedirs(config_dir, exist_ok=True)
-            
-            # Imposta il percorso di lavoro corrente
-            os.chdir(config_dir)
                 
             # Usa il Task Scheduler invece del registro
             import subprocess
             task_name = "GlikNightscoutViewer"
             
             if enable:
-                # Crea un task pianificato con descrizione chiara e percorso di lavoro
+                # Crea un task pianificato con descrizione chiara
                 cmd = [
                     'schtasks', '/create', '/tn', task_name,
-                    '/tr', f'cmd /c "cd /d "{config_dir}" && "{app_path}" --minimized"',
+                    '/tr', f'"{app_path}" --minimized',
                     '/sc', 'onlogon',
                     '/rl', 'LIMITED',
                     '/f',
@@ -192,20 +187,45 @@ class ConfigDialog(QDialog):
                     '/ru', os.environ['USERNAME'],
                     '/np'
                 ]
-                result = subprocess.run(cmd, capture_output=True, text=True)
-                if result.returncode != 0 and __debug__:
+                result = subprocess.run(cmd, capture_output=True, text=True, shell=True)
+                if result.returncode != 0:
                     print(f"Errore nella creazione del task: {result.stderr}")
+                    # Fallback: prova a creare il task senza shell
+                    cmd = [
+                        'schtasks', '/create', '/tn', task_name,
+                        '/tr', app_path,
+                        '/sc', 'onlogon',
+                        '/rl', 'LIMITED',
+                        '/f'
+                    ]
+                    subprocess.run(cmd, capture_output=True, text=True)
             else:
                 # Rimuovi il task
                 try:
                     result = subprocess.run(['schtasks', '/delete', '/tn', task_name, '/f'], 
-                                       capture_output=True, text=True)
-                    if result.returncode != 0 and __debug__:
+                                       capture_output=True, text=True, shell=True)
+                    if result.returncode != 0:
                         print(f"Errore nella rimozione del task: {result.stderr}")
                 except Exception as e:
-                    if __debug__:
-                        print(f"Errore nella rimozione del task: {e}")
+                    print(f"Errore nella rimozione del task: {e}")
                     
         except Exception as e:
-            if __debug__:
-                print(f"Errore nella gestione dell'autostart: {e}") 
+            print(f"Errore nella gestione dell'autostart: {e}")
+    
+    def check_autostart_status(self):
+        """Verifica se l'avvio automatico è configurato"""
+        try:
+            import subprocess
+            task_name = "GlikNightscoutViewer"
+            
+            result = subprocess.run(['schtasks', '/query', '/tn', task_name], 
+                                   capture_output=True, text=True, shell=True)
+            
+            if result.returncode == 0:
+                self.autostart.setChecked(True)
+            else:
+                self.autostart.setChecked(False)
+                
+        except Exception as e:
+            print(f"Errore nel verificare lo stato dell'autostart: {e}")
+            self.autostart.setChecked(False) 

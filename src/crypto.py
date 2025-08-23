@@ -35,7 +35,7 @@ class ConfigCrypto:
         """Ottiene il percorso dell'applicazione"""
         if getattr(sys, 'frozen', False):
             return os.path.dirname(sys.executable)
-        return os.path.dirname(os.path.abspath(__file__))
+        return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     
     def encrypt_config(self, config_data):
         """Cifra i dati di configurazione"""
